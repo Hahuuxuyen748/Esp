@@ -1,9 +1,8 @@
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
-local espEnabled = false
-local aimEnabled = false
-local wallhackEnabled = false
+local espEnabled = true
+local aimEnabled = true
 
 -- Hàm tạo thông báo hiển thị
 local function showNotification(message)
@@ -13,7 +12,7 @@ local function showNotification(message)
 
     local textLabel = Instance.new("TextLabel", gui)
     textLabel.Size = UDim2.new(0.5, 0, 0.1, 0) -- Kích thước giao diện
-    textLabel.Position = UDim2.new(0.25, 0, 0.1, 0) -- Vị trí ở giữa trên màn hình
+    textLabel.Position = UDim2.new(0.25, 0, 0.9, 0) -- Vị trí ở dưới cùng
     textLabel.BackgroundColor3 = Color3.new(0, 0, 0) -- Màu nền đen
     textLabel.BackgroundTransparency = 0.5 -- Độ trong suốt
     textLabel.TextColor3 = Color3.new(1, 1, 1) -- Màu chữ trắng
@@ -26,8 +25,8 @@ local function showNotification(message)
     gui:Destroy()
 end
 
--- Hàm tạo Beam (tia)
-local function createBeam(origin, target, color)
+-- Hàm tạo Beam (tia xuyên tường với 7 màu)
+local function createBeam(origin, target)
     local attachment1 = Instance.new("Attachment", origin)
     local attachment2 = Instance.new("Attachment", target)
 
@@ -37,75 +36,66 @@ local function createBeam(origin, target, color)
     beam.FaceCamera = true
     beam.Width0 = 0.1
     beam.Width1 = 0.1
-    beam.Color = ColorSequence.new(color) -- Tia có thể thay đổi màu
+
+    -- Tạo tia 7 màu
+    beam.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromHSV(math.random(), 1, 1)),
+        ColorSequenceKeypoint.new(0.2, Color3.fromHSV(math.random(), 1, 1)),
+        ColorSequenceKeypoint.new(0.4, Color3.fromHSV(math.random(), 1, 1)),
+        ColorSequenceKeypoint.new(0.6, Color3.fromHSV(math.random(), 1, 1)),
+        ColorSequenceKeypoint.new(0.8, Color3.fromHSV(math.random(), 1, 1)),
+        ColorSequenceKeypoint.new(1, Color3.fromHSV(math.random(), 1, 1))
+    })
     beam.LightEmission = 1
     return beam
 end
 
--- Hàm tìm kẻ địch gần nhất
-local function findNearestEnemy()
-    local closestEnemy = nil
-    local closestDistance = math.huge -- Khoảng cách ban đầu là vô cực
+-- Hàm Auto Aim vào đầu của kẻ địch
+local function autoAim()
+    while aimEnabled do
+        for _, obj in pairs(game.Players:GetPlayers()) do
+            if obj ~= player and obj.Character and obj.Character:FindFirstChild("Humanoid") then
+                local enemyCharacter = obj.Character
+                local head = enemyCharacter:FindFirstChild("Head")
+                if head then
+                    -- Tự động nhắm vào đầu kẻ địch
+                    character:SetPrimaryPartCFrame(CFrame.new(character.PrimaryPart.Position, head.Position))
+                end
+            end
+        end
+        wait(0.1)  -- Cập nhật mỗi 0.1 giây
+    end
+end
 
+-- Hàm để hiển thị ESP (với tia xuyên tường)
+local function updateESP()
     for _, obj in pairs(game.Players:GetPlayers()) do
         if obj ~= player and obj.Character and obj.Character:FindFirstChild("Humanoid") then
             local enemyCharacter = obj.Character
-            local distance = (character.PrimaryPart.Position - enemyCharacter.PrimaryPart.Position).magnitude
-            if distance < closestDistance then
-                closestDistance = distance
-                closestEnemy = enemyCharacter
-            end
-        end
-    end
-    return closestEnemy
-end
-
--- Hàm ESP (Hiển thị kẻ địch và đồng đội với màu khác nhau)
-local function updateESP()
-    for _, obj in pairs(game.Players:GetPlayers()) do
-        if obj.Character and obj.Character:FindFirstChild("Humanoid") then
-            local enemyCharacter = obj.Character
             local humanoid = enemyCharacter.Humanoid
 
-            -- Tạo tia tới kẻ địch
-            local beamColor = (obj.Team == player.Team) and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)  -- Xanh cho đồng đội, Đỏ cho kẻ địch
-            createBeam(character.PrimaryPart, enemyCharacter.PrimaryPart, beamColor)
+            -- Tạo tia xuyên tường hiển thị 7 màu
+            createBeam(character.PrimaryPart, enemyCharacter.PrimaryPart)
         end
     end
 end
 
--- Hàm Aim tự động vào kẻ địch gần nhất
-local function autoAim()
-    while aimEnabled do
-        local enemy = findNearestEnemy()
-        if enemy then
-            -- Tự động nhắm vào kẻ địch
-            character:SetPrimaryPartCFrame(CFrame.new(character.PrimaryPart.Position, enemy.PrimaryPart.Position))
-        end
-        wait(0.1)  -- Lặp lại mỗi 0.1 giây
+-- Hiển thị thông báo "Code by Hà Hữu Xuyên 🇻🇳" khi bắt đầu chạy script
+showNotification("Code by Hà Hữu Xuyên 🇻🇳")
+
+-- Bắt đầu các chức năng
+if espEnabled then
+    -- Cập nhật ESP liên tục
+    while true do
+        updateESP()
+        wait(0.1) -- Cập nhật ESP mỗi 0.1 giây
     end
 end
 
--- Hàm hiển thị menu giao diện
-local function createMenu()
-    -- Nếu menu đã tồn tại, không tạo lại
-    if game.Players.LocalPlayer.PlayerGui:FindFirstChild("MenuGUI") then return end
-
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "MenuGUI"
-    gui.Parent = player.PlayerGui
-
-    -- Tạo khung menu
-    local menuFrame = Instance.new("Frame")
-    menuFrame.Size = UDim2.new(0, 300, 0, 250)
-    menuFrame.Position = UDim2.new(0.5, -150, 0.5, -125)
-    menuFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
-    menuFrame.Parent = gui
-
-    -- Tạo tiêu đề menu
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, 0, 0, 50)
-    titleLabel.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+if aimEnabled then
+    -- Tự động aim vào đầu kẻ địch
+    autoAim()
+end    titleLabel.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
     titleLabel.Text = "Xuyên X Hub 🇻🇳"
     titleLabel.TextColor3 = Color3.new(1, 1, 1)
     titleLabel.TextScaled = true
