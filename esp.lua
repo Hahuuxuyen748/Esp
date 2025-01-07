@@ -38,53 +38,64 @@ local function createBeam(origin, target)
     return beam
 end
 
--- Hàm tìm kẻ địch gần nhất
-local function findNearestEnemy()
-    local closestEnemy = nil
-    local closestDistance = math.huge -- Khoảng cách ban đầu là vô cực
-
+-- Hàm tìm tất cả địch
+local function findEnemies()
+    local enemies = {}
     for _, obj in pairs(game.Players:GetPlayers()) do
         if obj ~= player and obj.Character and obj.Character:FindFirstChild("Humanoid") then
-            local enemyCharacter = obj.Character
-            local distance = (character.PrimaryPart.Position - enemyCharacter.PrimaryPart.Position).magnitude
-            if distance < closestDistance then
-                closestDistance = distance
-                closestEnemy = enemyCharacter
-            end
+            table.insert(enemies, obj.Character)
         end
     end
-    return closestEnemy
+    return enemies
 end
 
--- Theo dõi và tạo tia tới kẻ địch
+-- Hàm theo dõi và tạo tia cho tất cả địch
 local function trackEnemies()
     while true do
-        local enemy = findNearestEnemy()
-        if enemy and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-            local beam = createBeam(character.PrimaryPart, enemy.PrimaryPart)
-            wait(0.1) -- Tia tồn tại trong 0.1 giây
-            beam:Destroy()
+        local enemies = findEnemies()
+        for _, enemy in pairs(enemies) do
+            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                local beam = createBeam(character.PrimaryPart, enemy.PrimaryPart)
+                wait(0.1) -- Tia tồn tại trong 0.1 giây
+                beam:Destroy()
+            end
         end
         wait(0.5) -- Tìm kiếm kẻ địch mỗi 0.5 giây
     end
 end
 
--- Hiển thị thông báo khi bắt đầu script
-showNotification()
-
--- Bắt đầu theo dõi kẻ địch
-trackEnemies()showNotification("Code by Hà Hữu Xuyên 🇻🇳")
-
--- Bắt đầu các chức năng
-if espEnabled then
-    -- Cập nhật ESP liên tục
+-- Hàm thực hiện auto aim (auto ghim đầu)
+local function autoAim()
     while true do
-        updateESP()
-        wait(0.1) -- Cập nhật ESP mỗi 0.1 giây
+        local enemies = findEnemies()
+        for _, enemy in pairs(enemies) do
+            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                -- Cách đơn giản nhất để aim vào đầu kẻ địch
+                local head = enemy:FindFirstChild("Head")
+                if head then
+                    character:SetPrimaryPartCFrame(CFrame.new(head.Position)) -- Ghim đầu vào đầu kẻ địch
+                end
+            end
+        end
+        wait(0.1) -- Điều chỉnh tốc độ aim
     end
 end
 
-if aimEnabled then
-    -- Tự động aim vào đầu kẻ địch
+-- Hàm khởi tạo lại các chức năng sau khi respawn
+local function onCharacterAdded(newCharacter)
+    character = newCharacter
+    -- Hiển thị thông báo khi bắt đầu script
+    showNotification()
+    
+    -- Bắt đầu theo dõi kẻ địch và thực hiện auto aim
+    trackEnemies()
     autoAim()
-    end
+end
+
+-- Gọi hàm khi nhân vật mới được tạo (sau khi chết và hồi sinh)
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- Khi bắt đầu, nếu nhân vật đã có thì sẽ kích hoạt ngay
+if player.Character then
+    onCharacterAdded(player.Character)
+end
