@@ -1,111 +1,120 @@
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local head = character:WaitForChild("Head")
+local mouse = player:GetMouse()
 
--- Hàm tạo thông báo hiển thị
-local function showNotification()
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "NotificationGUI"
-    gui.Parent = player.PlayerGui
+-- Tạo BillboardGui để hiển thị tên và máu người chơi
+local billboardGui = Instance.new("BillboardGui")
+billboardGui.Adornee = head
+billboardGui.Size = UDim2.new(0, 200, 0, 100)
+billboardGui.StudsOffset = Vector3.new(0, 3, 0)  -- Điều chỉnh vị trí hiển thị
 
-    local textLabel = Instance.new("TextLabel", gui)
-    textLabel.Size = UDim2.new(0.5, 0, 0.1, 0) -- Kích thước giao diện
-    textLabel.Position = UDim2.new(0.25, 0, 0.1, 0) -- Vị trí ở giữa trên màn hình
-    textLabel.BackgroundColor3 = Color3.new(0, 0, 0) -- Màu nền đen
-    textLabel.BackgroundTransparency = 0.5 -- Độ trong suốt
-    textLabel.TextColor3 = Color3.new(1, 1, 1) -- Màu chữ trắng
-    textLabel.TextScaled = true -- Chữ tự động co giãn
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.Text = "Code by Hà Hữu Xuyên 🇻🇳"
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(1, 0, 1, 0)
+frame.BackgroundTransparency = 1  -- Nền trong suốt
+frame.Parent = billboardGui
 
-    -- Tự động xóa thông báo sau 5 giây
-    wait(5)
-    gui:Destroy()
+-- Tạo TextLabel để hiển thị tên người chơi
+local nameLabel = Instance.new("TextLabel")
+nameLabel.Parent = frame
+nameLabel.Text = player.Name
+nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Màu trắng
+nameLabel.BackgroundTransparency = 1
+nameLabel.TextScaled = true
+
+-- Tạo TextLabel để hiển thị máu người chơi
+local healthLabel = Instance.new("TextLabel")
+healthLabel.Parent = frame
+healthLabel.Text = "HP: " .. math.floor(humanoid.Health)
+healthLabel.Size = UDim2.new(1, 0, 0.5, 0)
+healthLabel.Position = UDim2.new(0, 0, 0.5, 0)
+healthLabel.TextColor3 = Color3.fromRGB(255, 0, 0)  -- Màu đỏ cho máu
+healthLabel.BackgroundTransparency = 1
+healthLabel.TextScaled = true
+
+-- Cập nhật máu khi thay đổi
+humanoid.HealthChanged:Connect(function()
+    healthLabel.Text = "HP: " .. math.floor(humanoid.Health)
+end)
+
+billboardGui.Parent = character
+
+-- Tạo Part và Beam cho chiêu
+local startPart = Instance.new("Part")
+startPart.Size = Vector3.new(1, 1, 1)
+startPart.Position = character.HumanoidRootPart.Position  -- Vị trí người chơi
+startPart.Anchored = true
+startPart.CanCollide = false
+startPart.Parent = workspace
+
+local laserBeam = Instance.new("Beam")
+laserBeam.Parent = startPart
+laserBeam.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0))  -- Màu đỏ
+laserBeam.Width0 = 0.2
+laserBeam.Width1 = 0.2
+laserBeam.Attachment0 = Instance.new("Attachment", startPart)
+laserBeam.Attachment1 = Instance.new("Attachment", workspace)  -- Đầu tia laser
+
+-- Tạo vòng tròn aim
+local aimCircle = Instance.new("Part")
+aimCircle.Shape = Enum.PartType.Ball
+aimCircle.Size = Vector3.new(5, 1, 5)  -- Đặt kích thước vòng tròn aim
+aimCircle.Anchored = true
+aimCircle.CanCollide = false
+aimCircle.Material = Enum.Material.Neon
+aimCircle.Color = Color3.fromRGB(0, 255, 0)  -- Màu xanh lá cho vòng tròn aim
+aimCircle.Parent = workspace
+
+-- Cập nhật vòng tròn aim theo vị trí chuột
+mouse.Move:Connect(function()
+    aimCircle.Position = mouse.Hit.p
+end)
+
+-- Tạo thông báo "Code by Hà Hữu Xuyên 🇻🇳"
+local function createCodeNotification()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = player.PlayerGui
+    
+    local label = Instance.new("TextLabel")
+    label.Parent = screenGui
+    label.Size = UDim2.new(0, 300, 0, 50)
+    label.Position = UDim2.new(0.5, -150, 0.1, 0)
+    label.Text = "Code by Hà Hữu Xuyên 🇻🇳"
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.BackgroundTransparency = 1
+    label.TextScaled = true
+    label.Font = Enum.Font.SourceSansBold
+    label.TextStrokeTransparency = 0.8
+    label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    
+    -- Thời gian hiển thị thông báo
+    wait(2)
+    screenGui:Destroy()
 end
 
--- Hàm tự động ghim đầu kẻ địch
-local function autoAim()
-    while true do
-        local enemies = {}
-        for _, obj in pairs(game.Players:GetPlayers()) do
-            if obj ~= player and obj.Character and obj.Character:FindFirstChild("Humanoid") then
-                table.insert(enemies, obj.Character)
-            end
-        end
+-- Khi sử dụng chiêu
+local function onUseSkill()
+    startPart.Position = character.HumanoidRootPart.Position  -- Cập nhật vị trí bắt đầu của tia laser
+    laserBeam.Attachment1.Position = mouse.Hit.p  -- Cập nhật vị trí kết thúc của tia laser
+    aimCircle.Visible = false  -- Ẩn vòng tròn aim khi chiêu được sử dụng
+end
 
-        for _, enemy in pairs(enemies) do
-            if enemy:FindFirstChild("Head") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                -- Ghim đầu vào đầu kẻ địch
-                local head = enemy.Head
-                character:SetPrimaryPartCFrame(CFrame.new(head.Position))
-            end
-        end
-        wait(0.1) -- Điều chỉnh tốc độ aim
+-- Hiển thị vòng tròn aim khi nhấn phím E
+local function onActivateSkill()
+    aimCircle.Visible = true  -- Hiển thị vòng tròn aim khi sử dụng chiêu
+    wait(2)  -- Đợi 2 giây (hoặc thời gian phù hợp với chiêu)
+    onUseSkill()  -- Kích hoạt chiêu và ẩn vòng tròn aim
+    createCodeNotification()  -- Hiển thị thông báo "Code by Hà Hữu Xuyên 🇻🇳"
+end
+
+-- Gán sự kiện sử dụng chiêu (nhấn phím E)
+player.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.E then
+        onActivateSkill()
     end
-end
-
--- Hàm tạo tia (beam) xuyên tường
-local function createBeam(origin, target)
-    local attachment1 = Instance.new("Attachment", origin)
-    local attachment2 = Instance.new("Attachment", target)
-
-    local beam = Instance.new("Beam", origin)
-    beam.Attachment0 = attachment1
-    beam.Attachment1 = attachment2
-    beam.FaceCamera = true
-    beam.Width0 = 0.1
-    beam.Width1 = 0.1
-    beam.Color = ColorSequence.new(Color3.fromHSV(math.random(), 1, 1)) -- Màu ngẫu nhiên
-    beam.LightEmission = 1
-    return beam
-end
-
--- Hàm tạo ESP cho địch
-local function espEnemies()
-    while true do
-        local enemies = {}
-        for _, obj in pairs(game.Players:GetPlayers()) do
-            if obj ~= player and obj.Character and obj.Character:FindFirstChild("Humanoid") then
-                table.insert(enemies, obj.Character)
-            end
-        end
-
-        for _, enemy in pairs(enemies) do
-            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                -- Tạo tia xuyên tường cho địch
-                local beam = createBeam(character.PrimaryPart, enemy.PrimaryPart)
-
-                -- Hiển thị tên địch trên màn hình
-                local nameTag = Instance.new("BillboardGui", enemy.Head)
-                nameTag.Adornee = enemy.Head
-                nameTag.Size = UDim2.new(0, 200, 0, 50)
-                nameTag.StudsOffset = Vector3.new(0, 2, 0)
-                local textLabel = Instance.new("TextLabel", nameTag)
-                textLabel.Text = enemy.Name
-                textLabel.TextSize = 18
-                textLabel.TextColor3 = Color3.new(1, 1, 1)
-                textLabel.BackgroundTransparency = 1
-                textLabel.TextStrokeTransparency = 0.5
-                textLabel.TextScaled = true
-
-                wait(0.1) -- Tia tồn tại trong 0.1 giây
-                beam:Destroy()
-                nameTag:Destroy()
-            end
-        end
-        wait(0.5) -- Cập nhật ESP sau mỗi 0.5 giây
-    end
-end
-
--- Hàm dịch chuyển đến kẻ địch
-local function teleportToEnemy()
-    while true do
-        local enemies = {}
-        for _, obj in pairs(game.Players:GetPlayers()) do
-            if obj ~= player and obj.Character and obj.Character:FindFirstChild("Humanoid") then
-                table.insert(enemies, obj.Character)
-            end
-        end
-
+end)
         for _, enemy in pairs(enemies) do
             if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
                 -- Dịch chuyển đến vị trí của kẻ địch
