@@ -88,6 +88,9 @@ end
 
 -- Hàm hiển thị menu giao diện
 local function createMenu()
+    -- Nếu menu đã tồn tại, không tạo lại
+    if game.Players.LocalPlayer.PlayerGui:FindFirstChild("MenuGUI") then return end
+
     local gui = Instance.new("ScreenGui")
     gui.Name = "MenuGUI"
     gui.Parent = player.PlayerGui
@@ -106,6 +109,67 @@ local function createMenu()
     titleLabel.Text = "Xuyên X Hub 🇻🇳"
     titleLabel.TextColor3 = Color3.new(1, 1, 1)
     titleLabel.TextScaled = true
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.Parent = menuFrame
+
+    -- Tạo avatar (cờ Việt Nam)
+    local avatarImage = Instance.new("ImageLabel")
+    avatarImage.Size = UDim2.new(0, 40, 0, 40)
+    avatarImage.Position = UDim2.new(0, 10, 0, 10)
+    avatarImage.Image = "rbxassetid://6460073050"  -- Cờ Việt Nam (hãy thay đổi asset ID nếu cần)
+    avatarImage.Parent = menuFrame
+
+    -- Tạo nút ESP
+    local espButton = Instance.new("TextButton")
+    espButton.Size = UDim2.new(1, 0, 0, 50)
+    espButton.Position = UDim2.new(0, 0, 0.1, 0)
+    espButton.Text = "Bật/Tắt ESP"
+    espButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    espButton.TextColor3 = Color3.new(1, 1, 1)
+    espButton.MouseButton1Click:Connect(function()
+        espEnabled = not espEnabled
+        showNotification("ESP " .. (espEnabled and "Bật" or "Tắt"))
+    end)
+    espButton.Parent = menuFrame
+
+    -- Tạo nút Aimbot
+    local aimbotButton = Instance.new("TextButton")
+    aimbotButton.Size = UDim2.new(1, 0, 0, 50)
+    aimbotButton.Position = UDim2.new(0, 0, 0.3, 0)
+    aimbotButton.Text = "Bật/Tắt Aimbot"
+    aimbotButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    aimbotButton.TextColor3 = Color3.new(1, 1, 1)
+    aimbotButton.MouseButton1Click:Connect(function()
+        aimEnabled = not aimEnabled
+        if aimEnabled then
+            autoAim()  -- Bắt đầu aim tự động nếu bật tính năng
+        end
+        showNotification("Aimbot " .. (aimEnabled and "Bật" or "Tắt"))
+    end)
+    aimbotButton.Parent = menuFrame
+
+    -- Tạo nút Xuyên Tường
+    local wallhackButton = Instance.new("TextButton")
+    wallhackButton.Size = UDim2.new(1, 0, 0, 50)
+    wallhackButton.Position = UDim2.new(0, 0, 0.5, 0)
+    wallhackButton.Text = "Bật/Tắt Xuyên Tường"
+    wallhackButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+    wallhackButton.TextColor3 = Color3.new(1, 1, 1)
+    wallhackButton.MouseButton1Click:Connect(function()
+        wallhackEnabled = not wallhackEnabled
+        showNotification("Xuyên Tường " .. (wallhackEnabled and "Bật" or "Tắt"))
+    end)
+    wallhackButton.Parent = menuFrame
+end
+
+-- Hàm để khôi phục lại menu khi nhân vật hồi sinh
+player.CharacterAdded:Connect(function()
+    -- Tạo lại menu khi nhân vật hồi sinh
+    createMenu()
+end)
+
+-- Gọi hàm tạo menu khi script chạy
+createMenu()    titleLabel.TextScaled = true
     titleLabel.Font = Enum.Font.SourceSansBold
     titleLabel.Parent = menuFrame
 
