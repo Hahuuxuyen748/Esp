@@ -95,17 +95,7 @@ end
 if aimEnabled then
     -- Tự động aim vào đầu kẻ địch
     autoAim()
-end    titleLabel.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-    titleLabel.Text = "Xuyên X Hub 🇻🇳"
-    titleLabel.TextColor3 = Color3.new(1, 1, 1)
-    titleLabel.TextScaled = true
-    titleLabel.Font = Enum.Font.SourceSansBold
-    titleLabel.Parent = menuFrame
-
-    -- Tạo avatar (cờ Việt Nam)
-    local avatarImage = Instance.new("ImageLabel")
-    avatarImage.Size = UDim2.new(0, 40, 0, 40)
-    avatarImage.Position = UDim2.new(0, 10, 0, 10)
+end    avatarImage.Position = UDim2.new(0, 10, 0, 10)
     avatarImage.Image = "rbxassetid://6460073050"  -- Cờ Việt Nam (hãy thay đổi asset ID nếu cần)
     avatarImage.Parent = menuFrame
 
