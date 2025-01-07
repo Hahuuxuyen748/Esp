@@ -135,3 +135,32 @@ player.CharacterAdded:Connect(onCharacterAdded)
 if player.Character then
     onCharacterAdded(player.Character)
 end
+        for _, enemy in pairs(enemies) do
+            if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                -- Dịch chuyển đến vị trí của kẻ địch
+                character:SetPrimaryPartCFrame(enemy.PrimaryPart.CFrame)
+            end
+        end
+        wait(1) -- Dịch chuyển tới địch mỗi giây
+    end
+end
+
+-- Hàm khởi tạo lại các chức năng sau khi respawn
+local function onCharacterAdded(newCharacter)
+    character = newCharacter
+    -- Hiển thị thông báo khi bắt đầu script
+    showNotification()
+
+    -- Bắt đầu auto aim, ESP và teleport
+    autoAim()
+    espEnemies()
+    teleportToEnemy()
+end
+
+-- Gọi hàm khi nhân vật mới được tạo (sau khi chết và hồi sinh)
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- Khi bắt đầu, nếu nhân vật đã có thì sẽ kích hoạt ngay
+if player.Character then
+    onCharacterAdded(player.Character)
+end
